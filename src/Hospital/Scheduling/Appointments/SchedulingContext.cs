@@ -2,13 +2,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Scheduling.Appointments
 {
-    public class CustomersContext : DbContext
+    public class SchedulingContext : DbContext
     {
         private const string Schema = "scheduling";
-        public DbSet<Customer> Customers { get; set; }
+        public DbSet<Patient> Customers { get; set; }
+        public DbSet<Doctor> Doctors { get; set; }
+        public DbSet<Appointment> Appointments { get; set; }
         
-        
-        public CustomersContext(DbContextOptions<CustomersContext> options) : base(options)
+        public SchedulingContext(DbContextOptions<SchedulingContext> options) : base(options)
         {
         }
 

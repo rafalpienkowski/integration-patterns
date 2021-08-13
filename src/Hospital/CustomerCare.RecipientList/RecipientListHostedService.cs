@@ -54,7 +54,9 @@ namespace CustomerCare.RecipientList
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                Console.WriteLine(" [x] Received {0}", message);
+                
+                _logger.LogInformation($"Message received: {message}");
+                
                 var recipients = await GetRecipients();
 
                 foreach (var recipient in recipients)
@@ -113,7 +115,7 @@ namespace CustomerCare.RecipientList
                 basicProperties: null,
                 body: message);
             
-            Console.WriteLine($"Message send to: {recipient.Name}");
+            _logger.LogInformation($"Message forwarded to: {recipient.Name}");
         }
     }
 }

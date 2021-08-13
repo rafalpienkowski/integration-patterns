@@ -1,0 +1,65 @@
+@startuml Overview
+
+node "Customer Care service" {
+  [CC Web Server]
+}
+
+node "Customer Care Recipient List service" {
+  [Recipient List Listener]
+}
+
+node "Scheduling service" {
+  [S Web Server]
+  [Scheduling Create Customer Listener]
+}
+
+node "Appointment Service" {
+  [Appointment Ended Listener]
+}
+
+node "Appointment Enricher service" {
+  [Appointment Enricher Listener]
+}
+
+node "RabbitMQ" {
+  [customer-care-customer-created]
+  [scheduling-create-customer]
+  [scheduling-appointment-ended]
+  [accounting-appointment-ended]
+}
+
+
+
+
+database "PostgreSQL" {
+  folder "Customer care" {
+    [Customer care schema]
+  }
+  frame "Customer care recipient list" {
+    [Customer care recipient list schema]
+  }
+  frame "Scheduling" {
+    [Scheduling schema]
+  }
+}
+
+[CC Web Server] -down-> [Customer care schema]
+[CC Web Server] -up-> [customer-care-customer-created]
+
+[customer-care-customer-created] -down-> [Recipient List Listener]
+[Recipient List Listener] -down-> [Customer care recipient list schema]
+[Recipient List Listener] -up-> [scheduling-create-customer]
+
+[scheduling-create-customer] -down-> [Scheduling Create Customer Listener]
+[Scheduling Create Customer Listener] -down-> [Scheduling schema]
+
+[S Web Server] -down-> [Scheduling schema]
+[S Web Server] -up-> [scheduling-appointment-ended]
+
+[scheduling-appointment-ended] -down-> [Appointment Enricher Listener]
+[Appointment Enricher Listener] -up-> [CC Web Server]
+[Appointment Enricher Listener] -up-> [accounting-appointment-ended]
+
+[accounting-appointment-ended] -down-> [Appointment Ended Listener]
+
+@enduml

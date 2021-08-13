@@ -1,4 +1,4 @@
-namespace CustomerCare.RecipientList.Configuration
+namespace AppointmentEnricher.Configuration
 {
     public class Messaging
     {

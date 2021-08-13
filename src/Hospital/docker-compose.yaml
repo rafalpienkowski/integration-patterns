@@ -1,0 +1,73 @@
+version: '3.4'
+services:
+  
+  customercare:
+    build: 
+      dockerfile: CustomerCare/Dockerfile
+      context: .
+    environment:
+      - ASPNETCORE_URLS=http://*:80
+    ports:
+      - 5000:80
+    depends_on:
+      - rabbit
+      - postgres
+  
+  customercare.recipientlist:
+    build:
+      dockerfile: CustomerCare.RecipientList/Dockerfile
+      context: .
+    depends_on:
+      - rabbit
+      - postgres
+    links:
+      - rabbit
+  
+  appointmentenricher:
+    build:
+      dockerfile: AppointmentEnricher/Dockerfile
+      context: .
+    depends_on:
+      - rabbit
+      - customercare
+      
+  accounting:
+    build:
+      dockerfile: Accounting/Dockerfile
+      context: .
+    depends_on:
+      - rabbit
+    
+  scheduling:
+    build: 
+      dockerfile: Scheduling/Dockerfile 
+      context: .
+    environment:
+      - ASPNETCORE_URLS=http://*:80
+    ports:
+      - 5100:80
+    depends_on:
+      - rabbit
+      - postgres
+
+  rabbit:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - 5672:5672
+      - 8080:15672
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:15672"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
+  postgres:
+    image: postgres:12-alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: integration
+      POSTGRES_DB: integration
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql

@@ -1,0 +1,102 @@
+﻿@page "/appointments"
+
+@inject IAppointmentsService _appointmentsService
+
+@if (_doctors == null && _patients == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else
+{
+    <p>
+        Add new appointment:
+    </p>
+    <EditForm EditContext="_editContext" OnSubmit="@HandleSubmit">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
+
+        <div class="form-group">
+            <label>
+                Doctor:
+            </label>
+            <InputSelect id="selectedDoctor" @bind-Value="_appointment.DoctorId" class="form-control">
+                @foreach (var doc in _doctors)
+                {
+                    <option value="@doc.Id">@doc.Name</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="form-group">
+            <label>
+                Patient:
+            </label>
+            <InputSelect id="selectedCustomer" @bind-Value="_appointment.CustomerId" class="form-control">
+                @foreach (var cust in _patients)
+                {
+                    <option value="@cust.Id">@cust.Name</option>
+                }
+            </InputSelect>
+        </div>
+
+        <p>
+            <button type="submit" class="btn btn-secondary">Add</button>
+        </p>
+    </EditForm>
+}
+
+@if (_appointments == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Doctor</th>
+            <th>Patient</th>
+            <th>Date</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var appointment in _appointments)
+        {
+            <tr>
+                <td>@appointment.DoctorName</td>
+                <td>@appointment.PatientName</td>
+                <td>@appointment.Date</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<Patient> _patients;
+    private IEnumerable<Doctor> _doctors;
+    private EditContext _editContext;
+    private Appointment _appointment = new Appointment();
+    private IEnumerable<AppointmentReadModel> _appointments;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _editContext = new EditContext(_appointment);
+        _patients = await _appointmentsService.GetPatients();
+        _doctors = await _appointmentsService.GetDoctors();
+        _appointments = await _appointmentsService.GetAppointments();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (_editContext.Validate())
+        {
+            await _appointmentsService.Add(_appointment);
+            _appointment = new Appointment();
+            _appointments = await _appointmentsService.GetAppointments();
+        }
+    }
+}

@@ -1,4 +1,4 @@
-namespace CustomerCare.Customers
+namespace Scheduling.Appointments
 {
     public class Messaging
     {

@@ -1,0 +1,89 @@
+﻿@page "/customers"
+
+@inject ICustomerService _customersService
+
+<h1>Customers</h1>
+
+<p>Add new customer</p>
+<EditForm EditContext="_editContext" OnSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label for="firstName">
+                First name:
+            </label>
+            <InputText id="firstName" DisplayName="First name" @bind-Value="_newCustomer.FirstName" class="form-control"/>
+        </div>
+        <div class="form-group col-md-6">
+            <label>
+                Last name: 
+            </label>
+            <InputText id="lastName" DisplayName="Last name" @bind-Value="_newCustomer.LastName" class="form-control"/>
+        </div>
+    </div>
+    <div class="form-group">
+        <label>
+            Address: 
+        </label>
+        <InputText id="address" DisplayName="Address" @bind-Value="_newCustomer.Address" class="form-control"/>
+    </div>
+    
+    <p>
+        <button type="submit" class="btn btn-secondary">Add</button>
+    </p>
+</EditForm>
+
+@if (_customers == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Address</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var customer in _customers)
+        {
+            <tr>
+                <td>@customer.FirstName</td>
+                <td>@customer.LastName</td>
+                <td>@customer.Address</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<Customer> _customers;
+    private Customer _newCustomer = new Customer();
+    private EditContext _editContext;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        _editContext = new EditContext(_newCustomer);
+        _customers = await _customersService.GetAll();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (_editContext.Validate())
+        {
+            await _customersService.Add(_newCustomer);
+            
+            _newCustomer = new Customer();
+            _customers = await _customersService.GetAll();
+        }
+    }
+
+}

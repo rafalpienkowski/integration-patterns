@@ -1,4 +1,4 @@
-namespace CustomerCare.RecipientList
+namespace CustomerCare.RecipientList.Configuration
 {
     public class Messaging
     {

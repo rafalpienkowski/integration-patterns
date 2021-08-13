@@ -55,7 +55,7 @@ namespace AppointmentEnricher
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                Console.WriteLine(" [x] Received {0}", message);
+                _logger.LogInformation($" [x] Received {message}");
 
                 var succeeded = true;
                 try
@@ -65,6 +65,7 @@ namespace AppointmentEnricher
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Unable to enrich the message");
+                    _channel.BasicNack(ea.DeliveryTag, false, true);
                     succeeded = false;
                 }
 
@@ -73,6 +74,10 @@ namespace AppointmentEnricher
                     _channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
                 }
             };
+            
+            _channel.BasicConsume(queue: InQueueName,
+                autoAck: false,
+                consumer: consumer);
 
             return Task.CompletedTask;
         }
@@ -100,6 +105,7 @@ namespace AppointmentEnricher
 
             var messageEnriched = JsonConvert.SerializeObject(appointmentEnded);
             var messageBytes = Encoding.UTF8.GetBytes(messageEnriched);
+            
             SendMessage(messageBytes);
         }
         
