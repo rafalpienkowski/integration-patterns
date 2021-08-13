@@ -34,6 +34,17 @@ The idea is to present that listed components could work independently. A downti
 
 ![Overview](./overview.png)
 
+## Run solution on local machine
+
+To run the whole solution on your local machine `Docker` and `Docker compose` is requried. 
+
+In the Hospital directory type:
+
+```
+docker-compose up
+```
+
+
 ## Technologies
 
 - dotnet core 5.0
