@@ -5,7 +5,7 @@
 This repository contains a set of sample applications presenting integration patterns in practice. Each project is a separate story located in a dedicated folder. To read more about a particular project, navigate to its directory.
 
 Projects:
-- [Hospital](src/Hospital/READNE.md)
+- [Hospital](src/Hospital/README.md)
 
 ## Contribution
 
