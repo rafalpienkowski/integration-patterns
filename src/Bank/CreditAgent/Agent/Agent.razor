@@ -1,0 +1,177 @@
+﻿@page "/agent"
+@using Microsoft.AspNetCore.SignalR.Client
+@using CreditAgent.Agent.Messages
+@using System.Net
+@using Microsoft.Extensions.Configuration
+@inject ILoanBroker _loanBroker
+@implements IAsyncDisposable
+@inject IConfiguration Configuration
+
+<h1 xmlns="http://www.w3.org/1999/html">Request loan</h1>
+<EditForm EditContext="_editContext" OnSubmit="@SendRequest">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+    
+    <div class="form-group">
+        <label>
+            User:
+            <InputText id="userName" DisplayName="User name" @bind-Value="_loanRequest.UserName" class="form-control"/>
+        </label>
+        <label>
+            Loan term (months):
+            <InputNumber id="loanTerm" DisplayName="Loan term" @bind-Value="_loanRequest.LoanTerm" class="form-control"/>
+        </label>
+        <label>
+            Loan amount (dollars):
+            <InputNumber id="loanAmount" DisplayName="Loan amount" @bind-Value="_loanRequest.LoanAmount" class="form-control"/>
+        </label>
+    </div>
+    <button type="submit" class="btn btn-secondary" disabled="@(_ongoingRequest)">Send</button>
+</EditForm>
+
+<hr>
+
+<div id="scrollbox">
+    @foreach (var message in _messages)
+    {
+        <div class="@message.CSS">
+            <div class="loanProcessId">
+                @if (message.LoanProcessId != Guid.Empty)
+                {
+                    <span>Loan process:</span>
+                    @message.LoanProcessId
+                }
+            </div>
+            <div class="msg">@message.Body</div>
+        </div>
+    }
+</div>
+
+@code {
+    
+    private HubConnection _hubConnection;
+    private readonly List<Message> _messages = new List<Message>();
+    private bool _ongoingRequest = false;
+    private readonly LoanRequest _loanRequest = new LoanRequest();
+    private EditContext _editContext;
+    private int _timer = 30;
+
+    protected override Task OnInitializedAsync()
+    {
+        _editContext = new EditContext(_loanRequest);
+
+        return Task.CompletedTask;
+    }
+
+    async Task SendRequest()
+    {
+        if (!ValidateRequest())
+        {
+            return;
+        }
+        
+        try
+        {
+            _ongoingRequest = true;
+            await Task.Delay(1);
+
+            _messages.Clear();
+           
+            var url = $"{Configuration["LoanHub:HostName"]}{LoanHub.HubUrl}";
+            
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl($"{Configuration["LoanHub:HostName"]}{LoanHub.HubUrl}")
+                .WithAutomaticReconnect()
+                .Build();
+
+            _hubConnection.On<Guid, CreditBureauResponse>(LoanHub.ReceiveCreditScore, (loanProcessId, message) =>
+            {
+                _messages.Add(Message.CreateScore(loanProcessId, $"Credit score: {message.CreditScore}, History lenght: {message.HistoryLenght} months"));
+                StateHasChanged();
+            });
+            _hubConnection.On<Guid, LoanQuoteResponse>(LoanHub.ReceiveBankQuote, (loanProcessId, quote) =>
+            {
+                _messages.Add(Message.CreateBankQuote(loanProcessId, $"Bank: {quote.QuoteName}, loan interest: {quote.LoanInterest}"));
+                StateHasChanged();
+            });
+            _hubConnection.On<Guid, LoanQuoteResponse>(LoanHub.ReceiveBestQuote, (loanProcessId, quote) =>
+            {
+                _messages.Add(Message.CreateBestQuote(loanProcessId,$"The best bank: {quote.QuoteName} with loan interest: {quote.LoanInterest:F2}"));
+                _ongoingRequest = false;
+                StateHasChanged();
+            });
+
+            await _hubConnection.StartAsync();
+
+            _loanRequest.ClientId = _hubConnection.ConnectionId;
+            
+            _loanBroker.SendLoanRequest(_loanRequest);
+            await StartTimerAsync();
+        }
+        catch (Exception e)
+        {
+            _messages.Add(Message.CreateError($"ERROR: Failed to start chat client: {e.Message}"));
+            _ongoingRequest = false;
+        }
+    }
+
+    private bool ValidateRequest()
+    {
+        var isValid = true;
+        if(string.IsNullOrEmpty(_loanRequest.UserName))
+        {
+            _messages.Add(Message.CreateError("Please enter a name"));
+            isValid =false;
+        }
+        if (_loanRequest.LoanTerm < 1)
+        {
+            _messages.Add(Message.CreateError("Loan term must be a positive number"));
+            isValid =false;
+        }
+        if (_loanRequest.LoanAmount < 1)
+        {
+            _messages.Add(Message.CreateError("Loan amount must be a positive number"));
+            isValid =false;
+        }
+
+        return isValid;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+
+    private async Task StartTimerAsync()
+    {
+        while (_timer > 0)
+        {
+            _timer--;
+            await Task.Delay(1000);
+        }
+
+        _loanBroker.PublishBestLoan(_loanRequest.ClientId);
+    }
+
+    private class Message
+    {
+        public Guid LoanProcessId { get; set; }
+        public string Body { get; set; }
+        public string CSS { get; set; }
+
+        private Message(Guid loanProcessId, string body, string css)
+        {
+            LoanProcessId = loanProcessId;
+            Body = body;
+            CSS = css;
+        }
+
+        public static Message CreateBestQuote(Guid loanProcessId, string body) => new Message(loanProcessId, body, "best-quote");
+        public static Message CreateBankQuote(Guid loanProcessId, string body) => new Message(loanProcessId, body, "bank-quote");
+        public static Message CreateScore(Guid loanProcessId, string body) => new Message(loanProcessId, body, "score");
+        public static Message CreateError(string body) => new Message(Guid.Empty, body, "error");
+    }
+}

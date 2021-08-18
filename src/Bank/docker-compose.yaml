@@ -1,0 +1,33 @@
+version: '3.4'
+services:
+ 
+  bank:
+    build:
+      dockerfile: ./Bank/Dockerfile
+      context: .
+    depends_on:
+      - rabbit
+        
+  creditbureau:
+    build:
+      dockerfile: ./CreditBureau/Dockerfile
+      context: .
+    depends_on:
+      - rabbit
+        
+  creditagent:
+    build:
+      dockerfile: ./CreditAgent/Dockerfile
+      context: .
+    environment:
+      - ASPNETCORE_URLS=http://*:80
+    ports:
+      - 5000:80
+    depends_on:
+      - rabbit
+  
+  rabbit:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - 5672:5672
+      - 8080:15672
