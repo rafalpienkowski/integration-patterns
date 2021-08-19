@@ -1,0 +1,28 @@
+@startuml Overview
+
+actor client
+queue credit_request
+queue credit_response
+queue loan_response
+
+client -ri(0)-> [Credit Agent]
+
+[Credit Agent] -up-> credit_request
+credit_request -up-> [Credit Bureau]
+[Credit Bureau] -do-> credit_response
+credit_response -do-> [Credit Agent]
+
+[Credit Agent] --> [Bank 1]
+[Bank 1] -up-> loan_response
+loan_response -left-> [Credit Agent]
+
+[Credit Agent] --> [Bank 2]
+[Bank 2] -up-> loan_response
+
+[Credit Agent] --> [Bank 3]
+[Bank 3] -up-> loan_response
+
+[Credit Agent] --> [Bank n]
+[Bank n] -up-> loan_response
+
+@enduml

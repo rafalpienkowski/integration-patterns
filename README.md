@@ -6,6 +6,7 @@ This repository contains a set of sample applications presenting integration pat
 
 Projects:
 - [Hospital](src/Hospital/README.md)
+- [Bank](src/Bank/README.md)
 
 ## Contribution
 

@@ -1,0 +1,44 @@
+@startuml Squence
+
+actor Client
+participant "Credit Agent"
+participant "Credit Bureau"
+
+box "Banks"
+participant "Bank 1"
+participant "Bank 2"
+participant "Bank 3"
+participant "Bank n"
+end box
+
+Client -> "Credit Agent": Loan Request
+"Credit Agent" -> "Credit Bureau": Credit Score request
+activate "Credit Agent"
+"Credit Bureau" -> "Credit Agent": Credit Score
+"Credit Agent" -> Client: Credit Score
+
+"Credit Agent" -> "Bank 1": Interest request
+activate "Bank 1"
+"Credit Agent" -> "Bank 2": Interest request
+activate "Bank 2"
+"Credit Agent" -> "Bank 3": Interest request
+activate "Bank 3"
+"Credit Agent" -> "Bank n": Interest request
+activate "Bank n"
+
+...Some time later...
+
+"Bank n" -> "Credit Agent": Interest response
+deactivate "Bank n"
+"Bank 2" -> "Credit Agent": Interest response
+deactivate "Bank 2"
+"Bank 1" -> "Credit Agent": Interest response
+deactivate "Bank 1"
+
+"Credit Agent" -> Client: Best interest
+deactivate "Credit Agent"
+
+"Bank 3" -> "Credit Agent": Interest response
+deactivate "Bank 3"
+
+@enduml
