@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace CreditBureau.CreditScore
 {
-    public class CreditBureauHostedService : IHostedService
+    public class CreditBureauHostedService : BackgroundService
     {
         private readonly ILogger<CreditBureauHostedService> _logger;
         private const string RequestQueueName = "credit-request";
@@ -40,22 +40,27 @@ namespace CreditBureau.CreditScore
             };
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        public override async Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Starting credit bureau");
             
             _messageBroker.StartListening(RequestQueueName, _onMessage);
-            
-            return Task.CompletedTask;
+
+            await base.StartAsync(cancellationToken);
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public override async Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Stopping credit bureau");
             
             _messageBroker?.Dispose();
-            
-            return Task.CompletedTask;
+
+            await base.StopAsync(cancellationToken);
         }
     }
 }
